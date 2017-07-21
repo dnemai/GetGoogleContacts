@@ -23,32 +23,44 @@ namespace GoogleContactsInCSharp
 
         private void cmdGetGoogleContacts_Click(object sender, EventArgs e)
         {
+            //Using GUID to force application asking for consent every time button is clicked
+            string user = Guid.NewGuid().ToString();
             string[] scopes = new string[] { "https://www.googleapis.com/auth/contacts.readonly" }; 
+
+            //Get this JSON by creating project in developer console. Download the JSON
             var stream = new FileStream("..\\..\\client_secret.json", FileMode.Open, FileAccess.Read);
             UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(stream).Secrets
                                                                                              , scopes
-                                                                                             , "user"
+                                                                                             , user
                                                                                              , CancellationToken.None
-                                                                                             , new FileDataStore("user")).Result;
+                                                                                             , new FileDataStore(user)).Result;
 
-            
+            //Authorize : Use assemblies from DLL distribution
             OAuth2Parameters parameters = new OAuth2Parameters();
             parameters.AccessToken = credential.Token.AccessToken;
             parameters.RefreshToken = credential.Token.RefreshToken;
             parameters.ApprovalPrompt = "force";
             parameters.AccessType = "offline";
-            PpulateContacts(parameters);
+
+            //Show contacts
+            PopulateContacts(parameters);
         }
 
-        private void PpulateContacts(OAuth2Parameters parameters)
+        private void PopulateContacts(OAuth2Parameters parameters)
         {
 
-            RequestSettings settings = new RequestSettings("Google contacts tutorial", parameters);
+            RequestSettings settings = new RequestSettings("Material Login", parameters);
             ContactsRequest cr = new ContactsRequest(settings);
             Feed<Contact> f = cr.GetContacts();
             foreach (Contact c in f.Entries)
             {
-                lstContacts.Items.Add(c.Name.FullName + Environment.NewLine + c.PrimaryEmail.Address);
+                Label lbl = new Label();
+                lbl.Text = c.Name.FullName + Environment.NewLine + c.PrimaryEmail.Address;
+
+                var index = dataGridContacts.Rows.Add();
+                dataGridContacts.Rows[index].Cells["NameAndEmail"].Value = c.Name.FullName + Environment.NewLine + c.PrimaryEmail.Address;
+                dataGridContacts.Rows[index].Cells["chkBox"].Value = "true";
+
             }
 
 
